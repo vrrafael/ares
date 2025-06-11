@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Gráfico de Temperatura</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+
+
+</head>
+
+<body>
+    <h2>Temperatura últimos 5 minutos</h2>
+    <canvas id="chart" width="500" height="200"></canvas>
+    <script>
+        async function fetchData() {
+            const response = await fetch('/data');
+            const data = await response.json();
+            return data;
+        }
+
+        function parseTemperatura(tempStr) {
+            return parseFloat(tempStr.replace('°C', '').trim());
+        }
+
+        let myChart = null;
+
+        async function buildChart() {
+            const data = await fetchData();
+            const labels = data.map(item => item.dt_registro);
+            const temperaturas = data.map(item => parseTemperatura(item.temperatura));
+
+            const ctx = document.getElementById('chart').getContext('2d');
+
+            const minTemp = Math.min(...temperaturas);
+            const maxTemp = Math.max(...temperaturas);
+            const yMin = minTemp - 5;
+            const yMax = maxTemp + 5;
+
+            if (myChart) {
+                myChart.data.labels = labels;
+                myChart.data.datasets[0].data = temperaturas;
+                myChart.options.scales.y.min = yMin;
+                myChart.options.scales.y.max = yMax;
+                myChart.update();
+                return;
+            }
+
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Temperatura (°C)',
+                        data: temperaturas,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        tension: 0.1,
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                parser: 'YYYY-MM-DD HH:mm:ss',
+                                tooltipFormat: 'DD/MM/YYYY HH:mm:ss',
+                                unit: 'second',
+                                stepSize: 15,
+                                displayFormats: {
+                                    minute: 'HH:mm:ss'
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Data e Hora'
+                            }
+                        },
+                        y: {
+                            min: yMin,
+                            max: yMax,
+                            title: {
+                                display: true,
+                                text: 'Temperatura (°C)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        buildChart();
+        setInterval(() => { buildChart() }, 5000);
+    </script>
+</body>
+
+</html>
