@@ -5,6 +5,7 @@ teste de leitura e escrita via mqtt
 1. Instale o [mosquitto](https://mosquitto.org/download/)
 
 execute os comandos abaixo no CMD na pasta do projeto
+
 2. Cria ambiente virtual python (opcional)
 ```cmd
 python -m venv .venv
