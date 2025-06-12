@@ -12,7 +12,10 @@
 
 <body>
     <h2>Temperatura últimos 5 minutos</h2>
-    <canvas id="chart" width="500" height="200"></canvas>
+    <canvas id="chart-temperatura" width="300" height="200"></canvas>
+    <h2>Umidade últimos 5 minutos</h2>
+    <canvas id="chart-umidade" width="300" height="200"></canvas>
+
     <script>
         async function fetchData() {
             const response = await fetch('/data');
@@ -20,40 +23,33 @@
             return data;
         }
 
-        function parseTemperatura(tempStr) {
-            return parseFloat(tempStr.replace('°C', '').trim());
-        }
+        let chartTemperatura = null;
+        let chartUmidade = null;
 
-        let myChart = null;
-
-        async function buildChart() {
-            const data = await fetchData();
-            const labels = data.map(item => item.dt_registro);
-            const temperaturas = data.map(item => parseTemperatura(item.temperatura));
-
-            const ctx = document.getElementById('chart').getContext('2d');
-
-            const minTemp = Math.min(...temperaturas);
-            const maxTemp = Math.max(...temperaturas);
+        function buildChart(instance, elmId, labels, values, textLabel) {
+            const ctx = document.getElementById(elmId).getContext('2d');
+            const minTemp = Math.min(...values);
+            const maxTemp = Math.max(...values);
             const yMin = minTemp - 5;
             const yMax = maxTemp + 5;
 
-            if (myChart) {
-                myChart.data.labels = labels;
-                myChart.data.datasets[0].data = temperaturas;
-                myChart.options.scales.y.min = yMin;
-                myChart.options.scales.y.max = yMax;
-                myChart.update();
-                return;
+            if (instance) {
+                instance.data.labels = labels;
+                instance.data.datasets[0].data = values;
+                instance.options.scales.y.min = yMin;
+                instance.options.scales.y.max = yMax;
+                instance.update();
+                return instance;
             }
 
-            myChart = new Chart(ctx, {
+            return new Chart(ctx, {
                 type: 'line',
+                reponsive: true,
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Temperatura (°C)',
-                        data: temperaturas,
+                        label: textLabel,
+                        data: values,
                         borderColor: 'rgba(75, 192, 192, 1)',
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         fill: true,
@@ -83,7 +79,7 @@
                             max: yMax,
                             title: {
                                 display: true,
-                                text: 'Temperatura (°C)'
+                                text: textLabel
                             }
                         }
                     }
@@ -91,8 +87,23 @@
             });
         }
 
-        buildChart();
-        setInterval(() => { buildChart() }, 5000);
+        function runAll() {
+            fetchData().then(data => {
+                const labels = data.map(item => item.dt_registro);
+                const temperaturas = data.map(item => parseFloat(item.temperatura.replace('°C', '').trim()));
+                const umidades = data.map(item => parseFloat(item.umidade.replace('%', '').trim()));
+
+                chartTemperatura = buildChart(chartTemperatura, 'chart-temperatura', labels, temperaturas, 'Temperatura (°C)')
+                chartUmidade = buildChart(chartUmidade, 'chart-umidade', labels, umidades, 'Umidade (%)')
+            })
+        }
+
+        runAll()
+
+        setInterval(() => {
+            runAll()
+        }, 5000);
+
     </script>
 </body>
 
