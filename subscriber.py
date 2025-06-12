@@ -15,8 +15,8 @@ def on_message(client, userdata, msg):
     print(f"Mensagem recebida no tópico {msg.topic}")
     try:
         mensagem = json.loads(msg.payload.decode())
+        print(mensagem)
         Log.create(**mensagem)
-        print("dados salvos na base de dados")
     except Exception as e:
         print(e)
 
